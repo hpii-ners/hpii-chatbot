@@ -1,0 +1,28 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Uploader & Index Builder</title>
+</head>
+<body>
+    <h2>📂 Upload Dokumen (.pdf, .txt, .csv)</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Unggah</button>
+    </form>
+
+    <h3>🗃️ File saat ini:</h3>
+    <ul>
+        {% for file in files %}
+            <li>{{ file }}</li>
+        {% endfor %}
+    </ul>
+
+    <form action="/regenerate" method="post">
+        <button type="submit">🔄 Regenerate Index</button>
+    </form>
+
+    <p style="color:red">{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}</p>
+</body>
+</html>

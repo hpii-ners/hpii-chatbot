@@ -1,0 +1,6 @@
+flask
+psycopg2-binary
+langchain
+langchain-community
+faiss-cpu
+python-dotenv

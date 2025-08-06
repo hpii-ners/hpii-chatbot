@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8"/>
+    <title>HPII Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 76px;
+            padding-bottom: 0;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            backdrop-filter: blur(20px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        .btn-outline-light {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-light.btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline-light i {
+            margin-right: 0.5rem;
+        }
+
+        .chat-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 1rem;
+            height: calc(100vh - 76px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 1rem 0;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 3rem;
+            padding-bottom: 120px; /* Space untuk input area */
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+            position: relative;
+            min-height: 0;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            word-wrap: break-word;
+            position: relative;
+            animation: messageSlide 0.4s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .message.bot {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            color: #2d3748;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        #streaming-response::after {
+            content: '|';
+            animation: blink 1s infinite;
+            color: #4facfe;
+            font-weight: bold;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .message.bot::before {
+            content: '🤖';
+            position: absolute;
+            left: -45px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .message.user::before {
+            content: '👤';
+            position: absolute;
+            right: -45px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .message.bot b,
+        .message.bot strong {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        .message.bot ul,
+        .message.bot ol {
+            margin: 0.5rem 0;
+            padding-left: 1.2rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            position: sticky;
+            bottom: 0;
+            z-index: 999;
+            box-shadow: 0 -4px 4px rgba(0, 0, 0, 0.1);
+            margin-top: auto;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            gap: 0.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(248, 250, 252, 0.8);
+            flex: 1;
+        }
+
+        .form-control:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            background: white;
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-send:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+            font-style: italic;
+            padding: 1rem 3rem;
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin: 0 3rem 1rem 3rem;
+            max-width: 65%;
+            align-self: flex-start;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4facfe;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: 0s; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                padding: 0 0.5rem;
+            }
+            
+            .chat-box {
+                padding: 1.5rem 1rem;
+                padding-bottom: 100px; /* Space untuk input area di mobile */
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            .message.bot::before,
+            .message.user::before {
+                display: none;
+            }
+            
+            .typing-indicator {
+                margin: 0 1rem 1rem 1rem;
+                padding: 1rem 1.5rem;
+                max-width: 85%;
+            }
+            
+            body {
+                padding-top: 10px;
+                padding-bottom: 0;
+            }
+            
+            .chat-container {
+                height: calc(100vh - 70px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark shadow-sm">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <img src="{{ url_for('static', filename='hpii-icon.png') }}" alt="HPII-Chatbot" class="HPII-Chatbot" widht="50px" height="50px">
+                HPII Chatbot
+            </span>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-light btn-sm" onclick="clearChat()">
+                    <i class="fas fa-trash-alt"></i>
+                    Clear Chat
+                </button>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('upload') }}">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Upload Dokumen
+                </a>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('home') }}">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <div class="chat-card">
+            <div class="chat-box">
+                <div class="message-wrapper">
+                    {% if chat_history %}
+                        {% for chat in chat_history %}
+                            <div class="message user">{{ chat.user }}</div>
+                            <div class="message bot">{{ chat.bot | safe }}</div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <h5>Selamat datang di HPII Chatbot!</h5>
+                            <p>Mulai percakapan dengan mengetik pertanyaan Anda di bawah ini.</p>
+                            <small class="text-muted">AI akan mencari informasi dari dokumen yang telah diupload.</small>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="typing-indicator">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    AI sedang mengetik...
+                </div>
+            </div>
+
+            <div class="input-section">
+                <form method="POST" id="chatForm">
+                    <div class="input-group">
+                        <input class="form-control" 
+                               type="text" 
+                               name="message" 
+                               placeholder="Ketik pertanyaan Anda tentang dokumen..." 
+                               required
+                               autocomplete="off">
+                        <button class="btn btn-send" type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto scroll to bottom
+        function scrollToBottom() {
+            const chatBox = document.querySelector('.chat-box');
+            if (chatBox) {
+                // Force scroll to very bottom with extra margin
+                chatBox.scrollTop = chatBox.scrollHeight + 100;
+                
+                // Alternative method for extra assurance
+                setTimeout(() => {
+                    chatBox.scrollTop = chatBox.scrollHeight + 100;
+                }, 10);
+            }
+        }
+
+        // Show typing indicator when form is submitted
+        document.getElementById('chatForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            const messageInput = document.querySelector('input[name="message"]');
+            const userMessage = messageInput.value.trim();
+            
+            if (userMessage) {
+                // Add user message immediately to UI
+                addUserMessage(userMessage);
+                
+                // Clear input and disable submit
+                messageInput.value = '';
+                const submitBtn = document.querySelector('.btn-send');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // Show typing indicator
+                const typingIndicator = document.querySelector('.typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.style.display = 'flex';
+                }
+                
+                scrollToBottom();
+                
+                // Start streaming
+                streamResponse(userMessage);
+            }
+        });
+        
+        // Add user message to chat
+        function addUserMessage(message) {
+            const messageWrapper = document.querySelector('.message-wrapper');
+            const emptyState = document.querySelector('.empty-state');
+            
+            // Remove empty state if exists
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user';
+            userMessageDiv.textContent = message;
+            messageWrapper.appendChild(userMessageDiv);
+        }
+        
+        // Add bot message container for streaming
+        function addBotMessageContainer() {
+            const messageWrapper = document.querySelector('.message-wrapper');
+            const botMessageDiv = document.createElement('div');
+            botMessageDiv.className = 'message bot';
+            botMessageDiv.id = 'streaming-response';
+            messageWrapper.appendChild(botMessageDiv);
+            return botMessageDiv;
+        }
+        
+        // Stream response using Server-Sent Events
+        function streamResponse(message) {
+            const botMessageDiv = addBotMessageContainer();
+            let fullResponse = '';
+            let typingIndex = 0;
+            let isTyping = false;
+            let streamComplete = false;
+            
+            // Check if browser supports ReadableStream
+            if (!window.ReadableStream) {
+                // Fallback to regular POST for older browsers
+                fallbackResponse(message, botMessageDiv);
+                return;
+            }
+            
+            // Start typing effect immediately
+            startContinuousTyping();
+            
+            fetch('/chat-stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                function readStream() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            streamComplete = true;
+                            return;
+                        }
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    if (data.chunk) {
+                                        fullResponse += data.chunk;
+                                    }
+                                    if (data.done) {
+                                        streamComplete = true;
+                                        return;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing stream data:', e);
+                                }
+                            }
+                        }
+                        
+                        return readStream();
+                    });
+                }
+                
+                return readStream();
+            })
+            .catch(error => {
+                console.error('Streaming error:', error);
+                streamComplete = true;
+                if (fullResponse === '') {
+                    fullResponse = '[ERROR] Terjadi kesalahan saat memproses permintaan.';
+                }
+            });
+            
+            // Continuous typing function
+            function startContinuousTyping() {
+                function typeNextChar() {
+                    if (typingIndex < fullResponse.length) {
+                        const currentText = fullResponse.substring(0, typingIndex + 1);
+                        botMessageDiv.innerHTML = currentText;
+                        typingIndex++;
+                        
+                        // Force scroll after every character with extra margin
+                        scrollToBottom();
+                        
+                        // Additional scroll assurance for streaming
+                        const chatBox = document.querySelector('.chat-box');
+                        if (chatBox) {
+                            chatBox.scrollTop = chatBox.scrollHeight + 200;
+                        }
+                        
+                        // Variable speed based on character type
+                        let delay = 25; // Base typing speed
+                        const char = fullResponse[typingIndex - 1];
+                        
+                        // Slower for punctuation to mimic natural typing
+                        if (char === '.' || char === '!' || char === '?') {
+                            delay = 150;
+                        } else if (char === ',' || char === ';') {
+                            delay = 75;
+                        } else if (char === ' ') {
+                            delay = 15;
+                        } else if (char === '\n') {
+                            delay = 50;
+                        }
+                        
+                        setTimeout(typeNextChar, delay);
+                    } else if (streamComplete) {
+                        // Both typing and streaming are complete
+                        saveToSessionAndFinish();
+                    } else {
+                        // Wait for more content from stream
+                        setTimeout(typeNextChar, 50);
+                    }
+                }
+                
+                typeNextChar();
+            }
+            
+            // Save to session and finish streaming
+            function saveToSessionAndFinish() {
+                // Save the complete conversation to session
+                fetch('/save-to-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_input: message,
+                        bot_response: fullResponse
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        finishStreaming();
+                    } else {
+                        console.error('Failed to save to session');
+                        finishStreaming();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving to session:', error);
+                    finishStreaming();
+                });
+            }
+        }
+        
+        // Fallback function for browsers that don't support streaming
+        function fallbackResponse(message, botMessageDiv) {
+            // Remove the streaming div and submit normally
+            botMessageDiv.remove();
+            
+            // Create a form and submit it
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/chat';
+            form.style.display = 'none';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'message';
+            input.value = message;
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        // Finish streaming and reset UI
+        function finishStreaming() {
+            // Hide typing indicator
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+            
+            // Reset submit button
+            const submitBtn = document.querySelector('.btn-send');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            
+            // Remove streaming ID
+            const streamingDiv = document.getElementById('streaming-response');
+            if (streamingDiv) {
+                streamingDiv.removeAttribute('id');
+            }
+            
+            // Final aggressive scroll to ensure response is fully visible
+            setTimeout(() => {
+                const chatBox = document.querySelector('.chat-box');
+                if (chatBox) {
+                    chatBox.scrollTop = chatBox.scrollHeight + 300;
+                }
+                scrollToBottom();
+            }, 100);
+            
+            // Additional final scroll after a short delay
+            setTimeout(() => {
+                scrollToBottom();
+            }, 300);
+            
+            // Focus input
+            focusInput();
+        }
+
+        // Clear chat function
+        function clearChat() {
+            if (confirm('Apakah Anda yakin ingin menghapus semua riwayat chat?')) {
+                fetch('/clear-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menghapus chat');
+                });
+            }
+        }
+
+        // Auto focus input
+        function focusInput() {
+            const input = document.querySelector('input[name="message"]');
+            if (input) {
+                input.focus();
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            scrollToBottom();
+            focusInput();
+            
+            // Reset submit button state
+            const submitBtn = document.querySelector('.btn-send');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            }
+            
+            // Hide typing indicator on page load
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+        });
+        
+        // Focus input when page is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            focusInput();
+        });
+    </script>
+</body>
+</html>
